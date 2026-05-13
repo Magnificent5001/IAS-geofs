@@ -1,4 +1,4 @@
-// GeoFS A350 - Native AP IAS Integrator (Draggable + Branded)
+// GeoFS AP IAS Integrator
 // by: a-flying-cow
 // Format: JavaScript (V8 Engine)
 
