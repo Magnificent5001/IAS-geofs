@@ -2,15 +2,30 @@ Instructions:
 
 
 INSTALLATION:
-Go to tampermonkey and install this script.
-If it doesn't work in game, you might need to edit it (delete and re-type the same thing) and save.
+
+(COMPLETE SCRATCH)
+a)Go to the Chrome Extensions Store and install the extension 'Tampermonkey'
+b)Download the main script
+c)Create a new script in tampermonkey
+d)Drag the file onto the open area
+
+
+
+If it doesn't work in game:
+a) You need to give tampermonkey all permissions to chrome.
+b) If (a) didnt work, you might need to edit it (delete and re-type the same thing) and save.
+
+
+
+Still need help? 
+↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+https://www.youtube.com/watch?v=8tyjJD65zws
+
 
 
 
 IN GAME:
 Your native Geo-FS autopilot must be on for this to work.
 Press the IAS or "X" button UI to minimise it. 
-
-
-
-Enjoy!!!
+Press the sound icon to mute/unmute audio from this extension.
+Enjoy!
