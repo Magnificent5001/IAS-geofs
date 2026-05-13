@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GeoFS A350 Autopilot & PMDG Alarm
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Custom IAS Autopilot Integrator with PMDG Overspeed Alarm
+// @version      1.3
+// @description  IAS Autopilot Integrator with PMDG Overspeed Alarm
 // @author       a-flying-cow
 // @match        *://*.geo-fs.com/*
 // @match        *://geo-fs.com/*
