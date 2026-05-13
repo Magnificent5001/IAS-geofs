@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         GeoFS A350 Autopilot & PMDG Alarm
+// @name         GeoFS A350 Autopilot & Overspeed Alarms
 // @namespace    http://tampermonkey.net/
 // @version      1.3
 // @description  IAS Autopilot Integrator with Overspeed Alarms
