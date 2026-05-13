@@ -1,0 +1,11 @@
+So, this idea originated because I saw a lot of people flying so slowly on RT (abt 280kts)
+I realised that they wanted to fly more realistically, but in the end arent flying more realistically.
+Here's why, Geo-FS uses TAS (true airspeed); which essentially adds up all of the effects of altitude to determine the true
+speed of an aircraft.
+In real-life, planes usually show on the primary flight display IAS (indicated airspeed); which doesn't add up the effects of 
+altitude.
+
+I thought if an autopilot was made that could suit real-life flying, it would help people actually finish an 8hr flight in 8hrs 
+and not 18hrs 😭.
+This is still in alpha state, so expect some bugs. 
+The End.
