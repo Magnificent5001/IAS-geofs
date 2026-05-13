@@ -49,7 +49,6 @@
         display: "block" 
     });
 
-    // Added "by: a-flying-cow" to the header
     ui.innerHTML = `
         <div id="iasDragHeader" style="background: #222; padding: 6px 10px; cursor: move; border-radius: 8px 8px 0 0; font-size: 12px; color: #aaa; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: bold;">:: IAS AUTOPILOT <span style="font-weight: normal; font-size: 10px; color: #777; margin-left: 4px;">by: a-flying-cow</span></span>
