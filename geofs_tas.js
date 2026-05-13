@@ -5,12 +5,10 @@
     console.clear();
     console.log("IAS AP Integrator Loaded.");
 
-    // 1. Clean up old scripts
     const existingUI = document.getElementById("simpleAirspeedUI");
     if (existingUI) existingUI.remove();
     if (window.iasHoldInterval) clearInterval(window.iasHoldInterval);
 
-    // 2. Create the Custom Panel
     const ui = document.createElement("div");
     ui.id = "simpleAirspeedUI";
     Object.assign(ui.style, {
@@ -43,7 +41,7 @@
     
     document.body.appendChild(ui);
 
-    // 3. State Variables
+    // State Variables
     window.customIasHoldActive = false;
     const engageBtn = document.getElementById("iasEngageBtn");
     const statusText = document.getElementById("apStatus");
@@ -68,7 +66,6 @@
         }
     };
 
-    // 4. The Master Loop (Runs 5 times a second to prevent game lag)
     window.iasHoldInterval = setInterval(function() {
         if (!window.geofs || !geofs.aircraft || !geofs.aircraft.instance) return;
 
