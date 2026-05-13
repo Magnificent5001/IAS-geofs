@@ -1,31 +1,70 @@
-// GeoFS AP IAS Integrator
+// GeoFS A350 - Native AP IAS Integrator 
 // by: a-flying-cow
 // Format: JavaScript (V8 Engine)
 
 (function() {
     console.clear();
-    console.log("IAS AP Integrator by: a-flying-cow Loaded.");
+    console.log("IAS AP Integrator by: a-flying-cow Loaded. Overspeed Systems Online.");
 
     document.getElementById("simpleAirspeedUI")?.remove();
     document.getElementById("iasToggleBtn")?.remove();
     if (window.iasHoldInterval) clearInterval(window.iasHoldInterval);
+    if (window.overspeedAlarmInterval) clearInterval(window.overspeedAlarmInterval);
 
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    let isAlarmPlaying = false;
+    let alarmStep = 0;
+
+    function playAirbusOverspeed() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = 'square'; // Harsh, electronic Airbus tone
+        
+        // Alternate between High and Low pitch
+        if (alarmStep % 2 === 0) {
+            osc.frequency.setValueAtTime(750, audioCtx.currentTime); // High
+        } else {
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime); // Low
+        }
+        alarmStep++;
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start();
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume control
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function startAlarm() {
+        if (isAlarmPlaying) return;
+        isAlarmPlaying = true;
+        window.overspeedAlarmInterval = setInterval(playAirbusOverspeed, 160); // Rapid alternating chime
+        ui.style.border = "2px solid #ff0000";
+        ui.style.boxShadow = "0px 0px 30px rgba(255, 0, 0, 0.6)";
+    }
+
+    function stopAlarm() {
+        if (!isAlarmPlaying) return;
+        isAlarmPlaying = false;
+        clearInterval(window.overspeedAlarmInterval);
+        ui.style.border = "1px solid #00ff88";
+        ui.style.boxShadow = "0px 0px 20px rgba(0, 255, 136, 0.25)";
+    }
+    
     const toggleBtn = document.createElement("button");
     toggleBtn.id = "iasToggleBtn";
     toggleBtn.innerText = "IAS";
     Object.assign(toggleBtn.style, {
-        position: "fixed",
-        bottom: "20px",
-        right: "70px", 
-        zIndex: "10000",
-        backgroundColor: "#00ff88",
-        color: "#000",
-        border: "1px solid #00ff88",
-        borderRadius: "4px",
-        padding: "5px 10px",
-        cursor: "pointer",
-        fontFamily: "Consolas, monospace",
-        fontWeight: "bold",
+        position: "fixed", bottom: "20px", right: "70px", zIndex: "10000",
+        backgroundColor: "#00ff88", color: "#000", border: "1px solid #00ff88",
+        borderRadius: "4px", padding: "5px 10px", cursor: "pointer",
+        fontFamily: "Consolas, monospace", fontWeight: "bold",
         boxShadow: "0px 0px 10px rgba(0, 255, 136, 0.2)"
     });
     document.body.appendChild(toggleBtn);
@@ -33,20 +72,11 @@
     const ui = document.createElement("div");
     ui.id = "simpleAirspeedUI";
     Object.assign(ui.style, {
-        position: "fixed",
-        bottom: "60px", 
-        right: "30px",
-        backgroundColor: "rgba(10, 15, 20, 0.95)",
-        border: "1px solid #00ff88",
-        color: "#fff",
-        borderRadius: "8px",
-        fontFamily: "Consolas, monospace",
-        fontSize: "15px",
-        zIndex: "10000",
-        boxShadow: "0px 0px 20px rgba(0, 255, 136, 0.25)",
-        width: "220px",
-        userSelect: "none",
-        display: "block" 
+        position: "fixed", bottom: "60px", right: "30px",
+        backgroundColor: "rgba(10, 15, 20, 0.95)", border: "1px solid #00ff88",
+        color: "#fff", borderRadius: "8px", fontFamily: "Consolas, monospace",
+        fontSize: "15px", zIndex: "10000", boxShadow: "0px 0px 20px rgba(0, 255, 136, 0.25)",
+        width: "220px", userSelect: "none", display: "block", transition: "box-shadow 0.2s, border 0.2s"
     });
 
     ui.innerHTML = `
@@ -67,14 +97,13 @@
     `;
     document.body.appendChild(ui);
 
-    // --- DRAG LOGIC ---
     let isDragging = false;
-    let dragOffsetX = 0;
-    let dragOffsetY = 0;
+    let dragOffsetX = 0, dragOffsetY = 0;
     const dragHeader = document.getElementById("iasDragHeader");
 
     dragHeader.addEventListener("mousedown", (e) => {
         isDragging = true;
+        if (audioCtx.state === 'suspended') audioCtx.resume(); // Unlock audio
         dragOffsetX = e.clientX - ui.getBoundingClientRect().left;
         dragOffsetY = e.clientY - ui.getBoundingClientRect().top;
         e.stopPropagation(); 
@@ -82,33 +111,26 @@
 
     document.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
-        ui.style.bottom = "auto"; 
-        ui.style.right = "auto";  
+        ui.style.bottom = "auto"; ui.style.right = "auto";  
         ui.style.left = (e.clientX - dragOffsetX) + "px";
         ui.style.top = (e.clientY - dragOffsetY) + "px";
     });
 
-    document.addEventListener("mouseup", () => {
-        isDragging = false;
-    });
+    document.addEventListener("mouseup", () => isDragging = false);
 
     // --- MINIMIZE/TOGGLE LOGIC ---
-    const closeBtn = document.getElementById("iasCloseBtn");
-    
     function toggleUI() {
+        if (audioCtx.state === 'suspended') audioCtx.resume(); // Unlock audio
         if (ui.style.display === "none") {
             ui.style.display = "block";
-            toggleBtn.style.backgroundColor = "#00ff88";
-            toggleBtn.style.color = "#000";
+            toggleBtn.style.backgroundColor = "#00ff88"; toggleBtn.style.color = "#000";
         } else {
             ui.style.display = "none";
-            toggleBtn.style.backgroundColor = "rgba(0,0,0,0.6)";
-            toggleBtn.style.color = "#00ff88";
+            toggleBtn.style.backgroundColor = "rgba(0,0,0,0.6)"; toggleBtn.style.color = "#00ff88";
         }
     }
-
     toggleBtn.onclick = toggleUI;
-    closeBtn.onclick = toggleUI; 
+    document.getElementById("iasCloseBtn").onclick = toggleUI; 
 
     // --- AP STATE VARIABLES ---
     window.customIasHoldActive = false;
@@ -117,25 +139,21 @@
     const dataDisplay = document.getElementById("dataDisplay");
     const iasInput = document.getElementById("targetIasInput");
 
-    // UI Button Logic
     engageBtn.onclick = () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume(); // Unlock audio
         window.customIasHoldActive = !window.customIasHoldActive;
         if (window.customIasHoldActive) {
-            engageBtn.style.background = "#00ff88";
-            engageBtn.style.color = "#000";
+            engageBtn.style.background = "#00ff88"; engageBtn.style.color = "#000";
             engageBtn.innerText = "ACTIVE";
-            statusText.innerText = "WAITING FOR NATIVE AP...";
-            statusText.style.color = "#00ff88";
+            statusText.innerText = "WAITING FOR NATIVE AP..."; statusText.style.color = "#00ff88";
         } else {
-            engageBtn.style.background = "#333";
-            engageBtn.style.color = "#fff";
+            engageBtn.style.background = "#333"; engageBtn.style.color = "#fff";
             engageBtn.innerText = "ENGAGE";
-            statusText.innerText = "SYSTEM STANDBY";
-            statusText.style.color = "#ffaa00";
+            statusText.innerText = "SYSTEM STANDBY"; statusText.style.color = "#ffaa00";
         }
     };
 
-    // --- MASTER LOOP ---
+    // --- THE MASTER LOOP ---
     window.iasHoldInterval = setInterval(function() {
         if (!window.geofs || !geofs.aircraft || !geofs.aircraft.instance) return;
 
@@ -153,9 +171,23 @@
 
         let currentIas = tasKts * Math.sqrt(density / densitySeaLevel);
 
-        // Update Visuals
+        // --- OVERSPEED LOGIC ---
+        let isOverspeeding = false;
+        let vmo = 340; // Max Operating Speed for A350
+        
+        if (currentIas > vmo) isOverspeeding = true;
+        if (altFt < 10000 && currentIas > 250) isOverspeeding = true;
+
+        if (isOverspeeding) {
+            startAlarm();
+        } else {
+            stopAlarm();
+        }
+
+        // Update Visuals 
+        let iasColor = isOverspeeding ? "#ff0000" : "#00ff88";
         dataDisplay.innerHTML = `
-            <div style="color: #00ff88; font-weight: bold; font-size: 18px;">IAS:  ${Math.round(currentIas)} KT</div>
+            <div style="color: ${iasColor}; font-weight: bold; font-size: 18px; transition: 0.2s;">IAS:  ${Math.round(currentIas)} KT</div>
             <div style="color: #00bfff; font-weight: bold;">TAS:  ${Math.round(tasKts)} KT</div>
             <div style="color: #ffaa00; font-weight: bold;">MACH: ${mach.toFixed(3)}</div>
             <div style="color: #aaaaaa; font-size: 14px; margin-top: 4px;">ALT:  ${Math.round(altFt).toLocaleString()} FT</div>
@@ -166,7 +198,6 @@
             let targetIas = parseFloat(iasInput.value);
             
             if (!isNaN(targetIas) && typeof geofs.autopilot.setSpeed === "function") {
-                
                 let requiredTasKts = targetIas * Math.sqrt(densitySeaLevel / density);
                 let isMachMode = geofs.autopilot.speedMode === "mach";
                 let targetValue;
