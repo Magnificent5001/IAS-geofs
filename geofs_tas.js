@@ -176,7 +176,6 @@
         }, 200);
     }
 
-    // Wait for GeoFS to fully load before injecting the script
     let checkLoaded = setInterval(function() {
         if (window.geofs && window.geofs.aircraft) {
             clearInterval(checkLoaded);
