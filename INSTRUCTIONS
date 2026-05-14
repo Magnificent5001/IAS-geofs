@@ -4,15 +4,15 @@ Instructions:
 INSTALLATION:
 
 (COMPLETE SCRATCH)
-a)Go to the Chrome Extensions Store and install the extension 'Tampermonkey'
-b)Download the main script
-c)Create a new script in tampermonkey
-d)Drag the file onto the open area
+* Go to the Chrome Extensions Store and install the extension 'Tampermonkey'
+* Download the main script
+* Create a new script in tampermonkey
+* Drag the file onto the open area
 
 
 
 If it doesn't work in game:
-a) You need to give tampermonkey all permissions to chrome.
+a) You need to give tampermonkey all permissions to your respective browser.
 b) If (a) didnt work, you might need to edit it (delete and re-type the same thing) and save.
 
 
@@ -25,7 +25,15 @@ https://www.youtube.com/watch?v=8tyjJD65zws
 
 
 IN GAME:
-Your native Geo-FS autopilot must be on for this to work.
-Press the IAS or "X" button UI to minimise it. 
-Press the sound icon to mute/unmute audio from this extension.
-Enjoy!
+* Your native Geo-FS autopilot must be on for this to work.
+* Press the IAS or "X" button UI to minimise it. 
+* Press the sound icon to mute/unmute audio from this extension.
+* Enjoy!
+
+
+VERY IMPORTANT NOTICE:
+* Delete your current script in tampermonkey (v1.3) and install the new (v1.3.1) for a big bug fix.
+Save it (Cmd + S) or (Ctrl + S).
+
+* Because this script automatically downloads a file, Tampermonkey might pop up a warning on your screen asking
+if the script is allowed to connect to files.catbox.moe. You MUST click "Always Allow" for the audio to work.
