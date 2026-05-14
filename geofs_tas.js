@@ -1,12 +1,14 @@
 // ==UserScript==
-// @name         GeoFS A350 Autopilot & Overspeed Alarms
+// @name         IAS Autopilot & Overspeed Alarms
 // @namespace    http://tampermonkey.net/
-// @version      1.3
-// @description  IAS Autopilot Integrator with Overspeed Alarms
+// @version      1.3.1
+// @description  Custom IAS Autopilot with Overspeed Alarms
 // @author       a-flying-cow
 // @match        *://*.geo-fs.com/*
 // @match        *://geo-fs.com/*
-// @grant        none
+// @run-at       document-idle
+// @grant        GM_xmlhttpRequest
+// @connect      files.catbox.moe
 // ==/UserScript==
 
 (function() {
@@ -15,29 +17,59 @@
     function initCustomAutopilot() {
         console.log("IAS AP Integrator by: a-flying-cow Loaded.");
 
-        const CUSTOM_ALARM_URL = "https://cdn.discordapp.com/attachments/1417051542225424468/1504040254191960084/pmdg_777_masterwarning.mp3?ex=6a058a24&is=6a0438a4&hm=967abc05e43de2b628381fa6339a1d1fed8991c8419d71ccc0d6e62c3cc25d5d&";
-
         if (document.getElementById("simpleAirspeedUI")) return;
 
-        window.overspeedAudio = new Audio(CUSTOM_ALARM_URL);
-        window.overspeedAudio.loop = true;
-        window.overspeedAudio.volume = 0.5;
+        window.overspeedAudio = new Audio();
+        window.overspeedAudio.loop = true; 
+        window.overspeedAudio.volume = 1.0; 
+        
         let isAlarmPlaying = false;
+        let isMuted = false;
+
+        const savedAudio = localStorage.getItem("pmdg_custom_alarm");
+        if (savedAudio) {
+            window.overspeedAudio.src = savedAudio;
+            console.log("PMDG Sound successfully loaded from local memory!");
+        } else {
+            console.log("Downloading PMDG sound for the first time...");
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: "https://files.catbox.moe/6jk3js.mp3",
+                responseType: "blob",
+                onload: function(res) {
+                    if (res.status === 200) {
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            const base64data = reader.result;
+                            localStorage.setItem("pmdg_custom_alarm", base64data);
+                            window.overspeedAudio.src = base64data;
+                            console.log("PMDG Sound permanently locked into memory!");
+                        }
+                        reader.readAsDataURL(res.response);
+                    }
+                }
+            });
+        }
 
         function startAlarm() {
             if (isAlarmPlaying) return;
             isAlarmPlaying = true;
-            let p = window.overspeedAudio.play();
-            if (p !== undefined) p.catch(function() {});
+            
             ui.style.border = "2px solid #ff0000";
             ui.style.boxShadow = "0px 0px 30px rgba(255, 0, 0, 0.6)";
+            
+            if (!isMuted && window.overspeedAudio.src) {
+                let p = window.overspeedAudio.play();
+                if (p !== undefined) p.catch(function() {});
+            }
         }
 
         function stopAlarm() {
             if (!isAlarmPlaying) return;
             isAlarmPlaying = false;
             window.overspeedAudio.pause();
-            window.overspeedAudio.currentTime = 0;
+            window.overspeedAudio.currentTime = 0; 
+            
             ui.style.border = "1px solid #00ff88";
             ui.style.boxShadow = "0px 0px 20px rgba(0, 255, 136, 0.25)";
         }
@@ -61,7 +93,7 @@
             fontSize: "15px", zIndex: "10000", width: "220px", userSelect: "none"
         });
 
-        ui.innerHTML =
+        ui.innerHTML = 
             "<div id='iasDragHeader' style='background: #222; padding: 6px 10px; cursor: move; border-radius: 8px 8px 0 0; font-size: 12px; color: #aaa; border-bottom: 1px solid #444; display: flex; justify-content: space-between;'>" +
                 "<span style='font-weight: bold;'>:: IAS AUTOPILOT <span style='font-weight: normal; font-size: 10px; color: #777;'>by: a-flying-cow</span></span>" +
                 "<span id='iasCloseBtn' style='cursor: pointer; color: #ff5555; font-size: 18px; line-height: 12px;'>&times;</span>" +
@@ -70,13 +102,14 @@
                 "<div id='dataDisplay'></div>" +
                 "<hr style='border: 0; border-top: 1px solid #444; margin: 12px 0;'>" +
                 "<div style='color: #fff; font-size: 13px; margin-bottom: 5px;'>TARGET IAS (KNOTS)</div>" +
-                "<div style='display: flex; gap: 10px;'>" +
-                    "<input type='number' id='targetIasInput' value='286' style='width: 70px; background: #222; color: #00ff88; border: 1px solid #555; text-align: center; font-family: Consolas; font-weight: bold;'>" +
+                "<div style='display: flex; gap: 6px;'>" +
+                    "<input type='number' id='targetIasInput' value='286' style='width: 60px; background: #222; color: #00ff88; border: 1px solid #555; text-align: center; font-family: Consolas; font-weight: bold;'>" +
                     "<button id='iasEngageBtn' style='flex-grow: 1; background: #333; color: #fff; cursor: pointer; border: 1px solid #555; font-family: Consolas; font-weight: bold;'>ENGAGE</button>" +
+                    "<button id='iasMuteBtn' title='Mute Alarm' style='width: 32px; background: #333; color: #fff; cursor: pointer; border: 1px solid #555; font-size: 14px;'>🔊</button>" +
                 "</div>" +
                 "<div id='apStatus' style='color: #ffaa00; font-size: 12px; margin-top: 8px; text-align: center; font-weight: bold;'>SYSTEM STANDBY</div>" +
             "</div>";
-
+            
         document.body.appendChild(ui);
 
         let isDragging = false, dragOffsetX = 0, dragOffsetY = 0;
@@ -84,11 +117,11 @@
             isDragging = true;
             dragOffsetX = e.clientX - ui.getBoundingClientRect().left;
             dragOffsetY = e.clientY - ui.getBoundingClientRect().top;
-            e.stopPropagation();
+            e.stopPropagation(); 
         });
         document.addEventListener("mousemove", function(e) {
             if (!isDragging) return;
-            ui.style.bottom = "auto"; ui.style.right = "auto";
+            ui.style.bottom = "auto"; ui.style.right = "auto";  
             ui.style.left = (e.clientX - dragOffsetX) + "px";
             ui.style.top = (e.clientY - dragOffsetY) + "px";
         });
@@ -100,7 +133,22 @@
             toggleBtn.style.color = ui.style.display === "none" ? "#00ff88" : "#000";
         }
         toggleBtn.onclick = toggleUI;
-        document.getElementById("iasCloseBtn").onclick = toggleUI;
+        document.getElementById("iasCloseBtn").onclick = toggleUI; 
+
+        const muteBtn = document.getElementById("iasMuteBtn");
+        muteBtn.onclick = function() {
+            isMuted = !isMuted;
+            muteBtn.innerText = isMuted ? "🔇" : "🔊";
+            muteBtn.style.color = isMuted ? "#ff5555" : "#fff";
+            
+            if (isMuted && !window.overspeedAudio.paused) {
+                window.overspeedAudio.pause();
+            } 
+            else if (!isMuted && isAlarmPlaying && window.overspeedAudio.src) {
+                let p = window.overspeedAudio.play();
+                if (p !== undefined) p.catch(function(){});
+            }
+        };
 
         window.customIasHoldActive = false;
         const engageBtn = document.getElementById("iasEngageBtn");
@@ -109,7 +157,7 @@
         const iasInput = document.getElementById("targetIasInput");
 
         engageBtn.onclick = function() {
-            if (window.overspeedAudio.paused) {
+            if (!isMuted && window.overspeedAudio.paused && window.overspeedAudio.src) {
                 let p = window.overspeedAudio.play();
                 if (p !== undefined) p.then(function() { window.overspeedAudio.pause(); window.overspeedAudio.currentTime = 0; }).catch(function(){});
             }
@@ -122,33 +170,38 @@
         };
 
         setInterval(function() {
-            if (!window.geofs || !geofs.aircraft || !geofs.aircraft.instance) return;
+            if (typeof geofs === "undefined" || !geofs.aircraft || !geofs.aircraft.instance) return;
 
-            let tasKts = (geofs.aircraft.instance.trueAirSpeed || 0) * 1.943844;
-
+            let tasKts = (geofs.aircraft.instance.trueAirSpeed || 0) * 1.943844; 
+            
             let altMeters = 0;
             if (geofs.aircraft.instance.llaLocation && geofs.aircraft.instance.llaLocation[2]) {
                 altMeters = geofs.aircraft.instance.llaLocation[2];
             }
             let altFt = altMeters * 3.28084;
-
+            
             let mach = 0;
             if (geofs.animation && geofs.animation.values && geofs.animation.values.mach) {
                 mach = geofs.animation.values.mach;
             }
 
-            let calcAlt = Math.min(altFt, 36089);
-            let tempK = 288.15 - (0.0019812 * calcAlt);
+            let calcAlt = Math.min(altFt, 36089); 
+            let tempK = 288.15 - (0.0019812 * calcAlt); 
             let density = (101325 * Math.pow(tempK / 288.15, 5.25588)) / (287.05 * tempK);
             let currentIas = tasKts * Math.sqrt(density / 1.225);
 
             let isOverspeeding = currentIas > 340 || (altFt < 10000 && currentIas > 250);
-            isOverspeeding ? startAlarm() : stopAlarm();
+            
+            if (isOverspeeding) {
+                startAlarm();
+            } else {
+                stopAlarm();
+            }
 
             let formattedMach = mach ? mach.toFixed(3) : "0.000";
             let formattedAlt = Math.round(altFt).toLocaleString();
 
-            dataDisplay.innerHTML =
+            dataDisplay.innerHTML = 
                 "<div style='color: " + (isOverspeeding ? '#ff0000' : '#00ff88') + "; font-weight: bold; font-size: 18px;'>IAS:  " + Math.round(currentIas) + " KT</div>" +
                 "<div style='color: #00bfff; font-weight: bold;'>TAS:  " + Math.round(tasKts) + " KT</div>" +
                 "<div style='color: #ffaa00; font-weight: bold;'>MACH: " + formattedMach + "</div>" +
@@ -160,7 +213,7 @@
                     let reqTas = targetIas * Math.sqrt(1.225 / density);
                     let isMachMode = geofs.autopilot.speedMode === "mach";
                     let targetValue = isMachMode ? (reqTas / (Math.sqrt(1.4 * 287.05 * tempK) * 1.943844)) : reqTas;
-
+                    
                     if (Math.abs(targetValue - (geofs.autopilot.values.speed || 0)) > (isMachMode ? 0.001 : 0.5)) {
                         let finalVal = isMachMode ? parseFloat(targetValue.toFixed(3)) : Math.round(targetValue);
                         geofs.autopilot.setSpeed(finalVal);
@@ -177,9 +230,10 @@
     }
 
     let checkLoaded = setInterval(function() {
-        if (window.geofs && window.geofs.aircraft) {
+        if (typeof geofs !== "undefined" && geofs.aircraft && geofs.aircraft.instance) {
             clearInterval(checkLoaded);
             initCustomAutopilot();
         }
     }, 1000);
+
 })();
